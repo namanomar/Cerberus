@@ -429,11 +429,6 @@ Download: [Kaggle competition page](https://www.kaggle.com/competitions/ieee-fra
 - For Kafka streaming: Docker or a running Kafka broker
 - IEEE-CIS dataset (Kaggle account required)
 
----
-
-## License
-
-MIT — see [LICENSE](LICENSE).
 
 ---
 

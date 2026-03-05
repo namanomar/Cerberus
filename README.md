@@ -392,21 +392,6 @@ Test suite covers:
 
 ---
 
-## Key Design Decisions
-
-### Why isotonic calibration?
-Raw LightGBM with `scale_pos_weight=27.5` (imbalanced class ratio) outputs probabilities skewed toward extremes — the default threshold of 0.5 catches almost no fraud. Fitting an `IsotonicRegression` on the validation set maps raw scores to true posterior probabilities, making threshold 0.5 meaningful and business thresholds interpretable.
-
-### Why a separate `calibrators.py`?
-Python's `pickle` requires classes to be importable from the same module path they were defined in. Keeping `IsotonicCalibrator` in its own module (`src/models/calibrators.py`) ensures the saved model can be deserialized from any script — training, evaluation, API, or notebooks.
-
-### Why Node2Vec instead of a GNN?
-The transaction graph is sparse and heterogeneous (card → device → email → address edges). Node2Vec's random-walk approach generalises well on sparse graphs and is orders of magnitude faster to train than a full GNN, making it practical for the 590k-row IEEE-CIS dataset on a single machine.
-
-### Why time-based split?
-A random split would leak future information: a model trained on a card's later transactions would trivially "recognise" the same card in validation. A strict time cutoff (80% oldest transactions train, 20% newest validate) mirrors real deployment conditions and produces honest evaluation numbers.
-
----
 
 ## Dataset
 

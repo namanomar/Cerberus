@@ -1,0 +1,41 @@
+# ──────────────────────────────────────────────────────────────────────────────
+# Fraud Detection Dashboard — Streamlit Dockerfile
+# ──────────────────────────────────────────────────────────────────────────────
+FROM python:3.11-slim
+
+LABEL description="Fraud Detection Streamlit Dashboard"
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+COPY requirements.txt .
+RUN pip install --upgrade pip && \
+    pip install --no-cache-dir \
+        streamlit>=1.28.0 \
+        plotly>=5.17.0 \
+        httpx>=0.25.0 \
+        pyvis>=0.3.2 \
+        pandas>=2.0.0 \
+        pyyaml>=6.0.1 \
+        loguru>=0.7.2
+
+COPY dashboard/ ./dashboard/
+COPY config/ ./config/
+COPY .env.example .env
+
+RUN useradd -m -u 1000 appuser && chown -R appuser:appuser /app
+USER appuser
+
+HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
+    CMD curl -f http://localhost:8501/_stcore/health || exit 1
+
+EXPOSE 8501
+
+CMD ["streamlit", "run", "dashboard/streamlit_app.py", \
+     "--server.port=8501", \
+     "--server.address=0.0.0.0", \
+     "--server.headless=true", \
+     "--browser.gatherUsageStats=false"]

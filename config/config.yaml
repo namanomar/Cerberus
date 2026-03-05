@@ -1,0 +1,101 @@
+data:
+  raw_dir: "data/raw/ieee-fraud-detection"
+  processed_dir: "data/processed"
+  transaction_file: "train_transaction.csv"
+  identity_file: "train_identity.csv"
+  test_transaction_file: "test_transaction.csv"
+  test_identity_file: "test_identity.csv"
+
+preprocessing:
+  target_col: "isFraud"
+  id_col: "TransactionID"
+  time_col: "TransactionDT"
+  amount_col: "TransactionAmt"
+  cat_fill_value: "Unknown"
+  num_fill_strategy: "median"
+  # Columns to drop (high missing or leakage risk)
+  drop_cols: []
+
+features:
+  card_col: "card1"
+  device_col: "DeviceInfo"
+  device_type_col: "DeviceType"
+  email_domain_col: "P_emaildomain"
+  addr_col: "addr1"
+  # Behavioral aggregation windows (in seconds)
+  time_windows: [3600, 86400, 604800]   # 1h, 1d, 7d
+
+model:
+  lightgbm:
+    n_estimators: 3000         # raised ceiling; early stopping finds optimal count
+    learning_rate: 0.03        # was 0.05 — slower, more precise gradient steps
+    max_depth: 8
+    num_leaves: 127            # was 63  — richer trees capture more fraud patterns
+    min_child_samples: 20      # keep (10 causes overfit with scale_pos_weight)
+    subsample: 0.7             # was 0.8 — more row-level stochasticity
+    colsample_bytree: 0.7      # was 0.8 — more feature-level stochasticity
+    reg_alpha: 0.1
+    reg_lambda: 2.0            # extra regularisation to offset larger trees
+    # class_weight removed — scale_pos_weight (computed from neg/pos ratio) handles imbalance
+    n_jobs: -1
+    random_state: 42
+  validation_frac: 0.2
+  early_stopping_rounds: 50
+
+anomaly:
+  contamination: 0.002
+  n_estimators: 200
+  max_samples: "auto"
+  random_state: 42
+
+graph:
+  node2vec:
+    dimensions: 64
+    walk_length: 20      # was 30  — shorter walks, still captures local structure
+    num_walks: 50        # was 200 — 4× faster; quality impact is minimal
+    p: 1
+    q: 0.5
+    workers: 4           # auto-clamped to 1 on Python 3.12 (gensim bug)
+    window: 10
+    min_count: 1
+    batch_words: 4
+  # Entity types used as nodes
+  node_types:
+    - card1
+    - DeviceInfo
+    - P_emaildomain
+    - addr1
+
+ensemble:
+  lgbm_weight: 0.60
+  graph_weight: 0.25
+  anomaly_weight: 0.15
+  # Thresholds for the calibrated-probability ensemble.
+  # After isotonic calibration the LightGBM component outputs true posteriors
+  # (fraud cases score 0.3–0.9+), so the ensemble score range recovers to ~[0,1].
+  # Adjust to taste — lower low/medium if you want higher recall at cost of FP.
+  thresholds:
+    low: 0.20
+    medium: 0.40
+    high: 0.65
+
+api:
+  host: "0.0.0.0"
+  port: 8000
+  workers: 4
+  model_dir: "data/models"
+
+streaming:
+  kafka_bootstrap_servers: "localhost:9092"
+  topic_transactions: "fraud-transactions"
+  topic_alerts: "fraud-alerts"
+  consumer_group: "fraud-detection-group"
+  transactions_per_second: 10
+
+mlflow:
+  tracking_uri: "sqlite:///mlruns/mlflow.db"   # local SQLite — no server needed, no deprecation warning
+  experiment_name: "fraud-detection"
+  artifact_location: "mlruns"
+
+monitoring:
+  prometheus_port: 8001

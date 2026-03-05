@@ -1,0 +1,6 @@
+f1_at_0.5: 0.53821
+f1_optimal: 0.563331
+fraud_recall_at_0.5: 0.405512
+optimal_threshold: 0.289199
+pr_auc: 0.572962
+roc_auc: 0.920706

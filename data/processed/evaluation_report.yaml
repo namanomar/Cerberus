@@ -1,0 +1,23 @@
+anomaly:
+  f1_at_0.5: 0.13305
+  f1_at_0.6: 0.105366
+  f1_at_0.7: 0.055959
+  f1_at_0.8: 0.014516
+  f1_at_0.9: 0.000981
+  pr_auc: 0.069057
+  roc_auc: 0.675474
+lightgbm:
+  f1_at_threshold: 0.563331
+  false_negatives: 1967
+  false_positives: 1284
+  fraud_precision: 0.620231
+  fraud_recall: 0.515994
+  optimal_f1: 0.563331
+  optimal_threshold: 0.289199
+  pr_auc: 0.572962
+  roc_auc: 0.920706
+  threshold: 0.289
+  true_negatives: 112760
+  true_positives: 2097
+val_fraud_rate: 0.034409
+val_set_size: 118108
